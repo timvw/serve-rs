@@ -1,11 +1,7 @@
 use tonic::{transport::Server, Request, Response, Status};
 
-pub mod server {
-    tonic::include_proto!("server"); // The string specified here must match the proto package name
-}
-
-use server::{PublishRequest, PublishResponse};
-use server::publisher_server::{PublisherServer, Publisher};
+use serve::server::{PublishRequest, PublishResponse};
+use serve::server::publisher_server::{PublisherServer, Publisher};
 
 #[derive(Debug, Default)]
 pub struct MyPublisher {}
