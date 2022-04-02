@@ -1,0 +1,14 @@
+syntax = "proto3";
+package server;
+
+service Publisher {
+  rpc Publish (PublishRequest) returns (PublishResponse);
+}
+
+message PublishRequest {
+  string message = 1;
+}
+
+message PublishResponse {
+  string message = 1;
+}
