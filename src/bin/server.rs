@@ -6,14 +6,14 @@ use std::thread;
 use std::time::Duration;
 use log::info;
 
-use serve::server::{PublishRequest, PublishResponse, SubscribeRequest, Message};
-use serve::server::publisher_server::{PublisherServer, Publisher};
+use serve::broker::{PublishRequest, PublishResponse, SubscribeRequest};
+use serve::broker::broker_server::{BrokerServer, Broker};
 
 #[derive(Debug, Default)]
-pub struct MyPublisher {}
+pub struct MyBroker {}
 
 #[tonic::async_trait]
-impl Publisher for MyPublisher {
+impl Broker for MyBroker {
 
     async fn publish(&self, request: Request<PublishRequest>) -> Result<Response<PublishResponse>, Status> {
         info!("Got a request: {:?}", request);
@@ -25,9 +25,9 @@ impl Publisher for MyPublisher {
         Ok(Response::new(reply))
     }
 
-    type SubscribeStream = Pin<Box<dyn Stream<Item = Result<serve::server::Message, Status>> + Send + Sync + 'static>>;
+    type SubscribeStream = Pin<Box<dyn Stream<Item = Result<serve::broker::Message, Status>> + Send + Sync + 'static>>;
 
-    async fn subscribe(&self, request: Request<SubscribeRequest>) -> Result<Response<Self::SubscribeStream>, Status> {
+    async fn subscribe(&self, _request: Request<SubscribeRequest>) -> Result<Response<Self::SubscribeStream>, Status> {
 
         let bitvavo_client = BitvavoClient::default();
 
@@ -37,7 +37,7 @@ impl Publisher for MyPublisher {
                 if(book_result.is_ok()) {
                     let book = book_result.expect("Failed to get book");
 
-                    let book_message = serve::server::Message {
+                    let book_message = serve::broker::Message {
                         message: format!("{:?}", book),
                     };
 
@@ -60,10 +60,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info"));
 
     let addr = "[::1]:50051".parse()?;
-    let publisher = MyPublisher::default();
+    let broker = MyBroker::default();
 
     Server::builder()
-        .add_service(PublisherServer::new(publisher))
+        .add_service(BrokerServer::new(broker))
         .serve(addr)
         .await?;
 

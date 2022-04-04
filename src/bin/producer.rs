@@ -1,5 +1,5 @@
-use serve::server::{PublishRequest, PublishResponse};
-use serve::server::publisher_client::PublisherClient;
+use serve::broker::{PublishRequest};
+use serve::broker::broker_client::BrokerClient;
 use serve::bitvavo::BitvavoClient;
 use std::thread;
 use std::time::Duration;
@@ -8,7 +8,7 @@ use std::time::Duration;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let bitvavo_client = BitvavoClient::default();
-    let mut publisher_client = PublisherClient::connect("http://[::1]:50051").await?;
+    let mut broker_client = BrokerClient::connect("http://[::1]:50051").await?;
 
     loop {
 
@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             message: format!("{:?}", book).into(),
         });
 
-        let response = publisher_client.publish(request).await?;
+        let response = broker_client.publish(request).await?;
         println!("RESPONSE={:?}", response);
 
         thread::sleep(Duration::from_secs(1));

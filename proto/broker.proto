@@ -1,7 +1,7 @@
 syntax = "proto3";
-package server;
+package broker;
 
-service Publisher {
+service Broker {
   rpc Publish (PublishRequest) returns (PublishResponse);
 
   rpc Subscribe(SubscribeRequest) returns (stream Message);
