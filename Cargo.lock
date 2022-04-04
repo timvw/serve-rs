@@ -976,6 +976,8 @@ dependencies = [
 name = "serve"
 version = "0.1.0"
 dependencies = [
+ "async-stream",
+ "futures-core",
  "prost",
  "reqwest",
  "serde",

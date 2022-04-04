@@ -1,6 +1,11 @@
 use tonic::{transport::Server, Request, Response, Status};
+use futures_core::Stream;
+use std::pin::Pin;
+use serve::bitvavo::BitvavoClient;
+use std::thread;
+use std::time::Duration;
 
-use serve::server::{PublishRequest, PublishResponse};
+use serve::server::{PublishRequest, PublishResponse, SubscribeRequest, Message};
 use serve::server::publisher_server::{PublisherServer, Publisher};
 
 #[derive(Debug, Default)]
@@ -8,6 +13,7 @@ pub struct MyPublisher {}
 
 #[tonic::async_trait]
 impl Publisher for MyPublisher {
+
     async fn publish(&self, request: Request<PublishRequest>) -> Result<Response<PublishResponse>, Status> {
         println!("Got a request: {:?}", request);
 
@@ -16,6 +22,47 @@ impl Publisher for MyPublisher {
         };
 
         Ok(Response::new(reply))
+    }
+
+    /*
+    let (mut tx, rx) = mpsc::channel(4);
+    let features = self.features.clone();
+
+    tokio::spawn(async move {
+        for feature in &features[..] {
+            if in_range(feature.location.as_ref().unwrap(), request.get_ref()) {
+                tx.send(Ok(feature.clone())).await.unwrap();
+            }
+        }
+    });
+
+    Ok(Response::new(ReceiverStream::new(rx)))
+     */
+
+    type SubscribeStream = Pin<Box<dyn Stream<Item = Result<serve::server::Message, Status>> + Send + Sync + 'static>>;
+
+    async fn subscribe(&self, request: Request<SubscribeRequest>) -> Result<Response<Self::SubscribeStream>, Status> {
+
+        let bitvavo_client = BitvavoClient::default();
+
+        let output = async_stream::try_stream! {
+            loop {
+                println!("generating a message...");
+                let book_result = bitvavo_client.get_book("BTC-EUR", 5).await;
+                if(book_result.is_ok()) {
+                    let book = book_result.expect("Failed to get book");
+
+                    let book_message = serve::server::Message {
+                        message: format!("{:?}", book),
+                    };
+
+                    yield book_message
+                }
+                thread::sleep(Duration::from_secs(1));
+            }
+        };
+
+        Ok(Response::new(Box::pin(output) as Self::SubscribeStream))
     }
 }
 
