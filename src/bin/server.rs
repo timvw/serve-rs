@@ -4,6 +4,7 @@ use std::pin::Pin;
 use serve::bitvavo::BitvavoClient;
 use std::thread;
 use std::time::Duration;
+use log::info;
 
 use serve::server::{PublishRequest, PublishResponse, SubscribeRequest, Message};
 use serve::server::publisher_server::{PublisherServer, Publisher};
@@ -15,7 +16,7 @@ pub struct MyPublisher {}
 impl Publisher for MyPublisher {
 
     async fn publish(&self, request: Request<PublishRequest>) -> Result<Response<PublishResponse>, Status> {
-        println!("Got a request: {:?}", request);
+        info!("Got a request: {:?}", request);
 
         let reply = PublishResponse {
             message: format!("Hello {}!", request.into_inner().message).into(),
@@ -23,21 +24,6 @@ impl Publisher for MyPublisher {
 
         Ok(Response::new(reply))
     }
-
-    /*
-    let (mut tx, rx) = mpsc::channel(4);
-    let features = self.features.clone();
-
-    tokio::spawn(async move {
-        for feature in &features[..] {
-            if in_range(feature.location.as_ref().unwrap(), request.get_ref()) {
-                tx.send(Ok(feature.clone())).await.unwrap();
-            }
-        }
-    });
-
-    Ok(Response::new(ReceiverStream::new(rx)))
-     */
 
     type SubscribeStream = Pin<Box<dyn Stream<Item = Result<serve::server::Message, Status>> + Send + Sync + 'static>>;
 
@@ -47,7 +33,6 @@ impl Publisher for MyPublisher {
 
         let output = async_stream::try_stream! {
             loop {
-                println!("generating a message...");
                 let book_result = bitvavo_client.get_book("BTC-EUR", 5).await;
                 if(book_result.is_ok()) {
                     let book = book_result.expect("Failed to get book");
@@ -55,6 +40,8 @@ impl Publisher for MyPublisher {
                     let book_message = serve::server::Message {
                         message: format!("{:?}", book),
                     };
+
+                    info!("yielding: {:?}", book_message);
 
                     yield book_message
                 }
@@ -68,6 +55,10 @@ impl Publisher for MyPublisher {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+    env_logger::init_from_env(
+        env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info"));
+
     let addr = "[::1]:50051".parse()?;
     let publisher = MyPublisher::default();
 
