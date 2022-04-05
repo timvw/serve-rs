@@ -4,3 +4,5 @@ pub mod broker {
 
 #[allow(dead_code)]
 pub mod bitvavo;
+
+pub mod mybroker;
