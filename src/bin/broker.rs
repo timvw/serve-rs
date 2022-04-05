@@ -1,10 +1,10 @@
 use tonic::{transport::Server, Request, Response, Status};
 use futures_core::Stream;
 use std::pin::Pin;
-use serve::bitvavo::BitvavoClient;
 use std::thread;
 use std::time::Duration;
 use log::info;
+use chrono::Utc;
 
 use serve::broker::{PublishRequest, PublishResponse, SubscribeRequest};
 use serve::broker::broker_server::{BrokerServer, Broker};
@@ -29,23 +29,14 @@ impl Broker for MyBroker {
 
     async fn subscribe(&self, _request: Request<SubscribeRequest>) -> Result<Response<Self::SubscribeStream>, Status> {
 
-        let bitvavo_client = BitvavoClient::default();
-
         let output = async_stream::try_stream! {
             loop {
-                let book_result = bitvavo_client.get_book("BTC-EUR", 5).await;
-                if(book_result.is_ok()) {
-                    let book = book_result.expect("Failed to get book");
+                let book_message = serve::broker::Message {
+                    message: format!("The time is {:?}", Utc::now()),
+                };
 
-                    let book_message = serve::broker::Message {
-                        message: format!("{:?}", book),
-                    };
-
-                    info!("yielding: {:?}", book_message);
-
-                    yield book_message
-                }
-                thread::sleep(Duration::from_secs(1));
+                info!("yielding: {:?}", book_message);
+                yield book_message
             }
         };
 
