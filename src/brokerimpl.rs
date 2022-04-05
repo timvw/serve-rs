@@ -8,10 +8,10 @@ use crate::broker::{PublishRequest, PublishResponse, SubscribeRequest};
 use crate::broker::broker_server::Broker;
 
 #[derive(Debug, Default)]
-pub struct MyBroker {}
+pub struct BrokerImpl {}
 
 #[tonic::async_trait]
-impl Broker for MyBroker {
+impl Broker for BrokerImpl {
 
     async fn publish(&self, request: Request<PublishRequest>) -> Result<Response<PublishResponse>, Status> {
         info!("Got a request: {:?}", request);

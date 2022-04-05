@@ -1,7 +1,7 @@
 use tonic::transport::Server;
 
 use serve::broker::broker_server::{BrokerServer};
-use serve::mybroker::{MyBroker};
+use serve::brokerimpl::{BrokerImpl};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info"));
 
     let addr = "[::1]:50051".parse()?;
-    let broker = MyBroker::default();
+    let broker = BrokerImpl::default();
 
     Server::builder()
         .add_service(BrokerServer::new(broker))
