@@ -3,12 +3,66 @@ use futures_core::Stream;
 use std::pin::Pin;
 use log::info;
 use chrono::Utc;
+use tokio::sync::mpsc;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::broker::{PublishRequest, PublishResponse, SubscribeRequest};
 use crate::broker::broker_server::Broker;
 
-#[derive(Debug, Default)]
-pub struct BrokerImpl {}
+#[derive(Debug)]
+enum Command {
+    Get {
+    },
+    Set {
+        val: String,
+    }
+}
+
+#[derive(Debug)]
+pub struct Topic {
+    tx: Sender<Command>,
+}
+
+impl Topic {
+    pub fn new() -> Topic {
+        let (tx, mut rx) = mpsc::channel::<Command>(32);
+
+        let manager = tokio::spawn(async move {
+            let mut current: String = "".to_string();
+
+            while let Some(cmd) = rx.recv().await {
+                use Command::*;
+
+                match cmd {
+                    Get {  } => {
+                        info!("need to return current value: {}", current);
+                    }
+                    Set { val } => {
+                        info!("changing current from {} into: {}", current, val);
+                        current = val;
+                    }
+                }
+            }
+        });
+
+        Topic {
+            tx: tx,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct BrokerImpl {
+    topic: Topic,
+}
+
+impl BrokerImpl {
+    pub fn new() -> BrokerImpl {
+        BrokerImpl {
+            topic: Topic::new(),
+        }
+    }
+}
 
 #[tonic::async_trait]
 impl Broker for BrokerImpl {
@@ -16,11 +70,19 @@ impl Broker for BrokerImpl {
     async fn publish(&self, request: Request<PublishRequest>) -> Result<Response<PublishResponse>, Status> {
         info!("Got a request: {:?}", request);
 
-        let reply = PublishResponse {
-            message: format!("Hello {}!", request.into_inner().message).into(),
-        };
+        let tx = self.topic.tx.clone();
+        let s = tokio::spawn(async move {
+            let cmd = Command::Set {
+                val: request.into_inner().message,
+            };
 
-        Ok(Response::new(reply))
+            tx.send(cmd).await.unwrap();
+        });
+
+        s.await.unwrap();
+        Ok(Response::new(PublishResponse {
+            message: "ok".to_string(),
+        }))
     }
 
     type SubscribeStream = Pin<Box<dyn Stream<Item = Result<crate::broker::Message, Status>> + Send + Sync + 'static>>;

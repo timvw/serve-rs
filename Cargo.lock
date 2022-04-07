@@ -1061,6 +1061,7 @@ name = "serve"
 version = "0.1.0"
 dependencies = [
  "async-stream",
+ "bytes",
  "chrono",
  "env_logger",
  "futures-core",

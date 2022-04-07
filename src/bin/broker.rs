@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info"));
 
     let addr = "[::1]:50051".parse()?;
-    let broker = BrokerImpl::default();
+    let broker = BrokerImpl::new();
 
     Server::builder()
         .add_service(BrokerServer::new(broker))
