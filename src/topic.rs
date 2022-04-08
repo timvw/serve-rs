@@ -6,12 +6,12 @@ use tokio::sync::{mpsc, oneshot};
 enum TopicCommand {
     Publish {
         message: String,
-        responder: oneshot::Sender<TopicPublishResponse>,
+        responder: oneshot::Sender<PublishResponse>,
     }
 }
 
 #[derive(Debug)]
-pub struct TopicPublishResponse {
+pub struct PublishResponse {
     pub offset: u64,
 }
 
@@ -33,7 +33,7 @@ impl Topic {
                     TopicCommand::Publish { message, responder } => {
                         info!("changing current from {} into: {}", current, message);
                         current = message;
-                        let response = TopicPublishResponse { offset };
+                        let response = PublishResponse { offset };
                         responder.send(response);
                         offset += 1;
                     }
@@ -46,7 +46,7 @@ impl Topic {
         }
     }
 
-    pub async fn publish(&self, message: String) -> TopicPublishResponse {
+    pub async fn publish(&self, message: String) -> PublishResponse {
 
         let command_sender = self.command_sender.clone();
         let (command_response_sender, command_response_receiver) = oneshot::channel();
@@ -60,8 +60,6 @@ impl Topic {
             command_response_receiver.await
         });
 
-        let res = s.await.unwrap().unwrap();
-        info!("responding = {:?}", res);
-        res
+        s.await.unwrap().unwrap()
     }
 }
