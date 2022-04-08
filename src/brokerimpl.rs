@@ -3,53 +3,12 @@ use futures_core::Stream;
 use std::pin::Pin;
 use log::info;
 use chrono::Utc;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot, watch};
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::broker::{PublishRequest, PublishResponse, SubscribeRequest};
 use crate::broker::broker_server::Broker;
-
-#[derive(Debug)]
-enum Command {
-    Get {
-    },
-    Set {
-        val: String,
-    }
-}
-
-#[derive(Debug)]
-pub struct Topic {
-    tx: Sender<Command>,
-}
-
-impl Topic {
-    pub fn new() -> Topic {
-        let (tx, mut rx) = mpsc::channel::<Command>(32);
-
-        let manager = tokio::spawn(async move {
-            let mut current: String = "".to_string();
-
-            while let Some(cmd) = rx.recv().await {
-                use Command::*;
-
-                match cmd {
-                    Get {  } => {
-                        info!("need to return current value: {}", current);
-                    }
-                    Set { val } => {
-                        info!("changing current from {} into: {}", current, val);
-                        current = val;
-                    }
-                }
-            }
-        });
-
-        Topic {
-            tx: tx,
-        }
-    }
-}
+use crate::topic::Topic;
 
 #[derive(Debug)]
 pub struct BrokerImpl {
@@ -70,18 +29,10 @@ impl Broker for BrokerImpl {
     async fn publish(&self, request: Request<PublishRequest>) -> Result<Response<PublishResponse>, Status> {
         info!("Got a request: {:?}", request);
 
-        let tx = self.topic.tx.clone();
-        let s = tokio::spawn(async move {
-            let cmd = Command::Set {
-                val: request.into_inner().message,
-            };
+        let res = self.topic.publish(request.into_inner().message).await;
 
-            tx.send(cmd).await.unwrap();
-        });
-
-        s.await.unwrap();
         Ok(Response::new(PublishResponse {
-            message: "ok".to_string(),
+            message: format!("offset: {:?}", res.offset),
         }))
     }
 

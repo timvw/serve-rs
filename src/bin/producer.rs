@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let response = broker_client.publish(request).await?;
         println!("RESPONSE={:?}", response);
 
-        thread::sleep(Duration::from_secs(1));
+        //thread::sleep(Duration::from_secs(1));
     }
 
     Ok(())
