@@ -34,7 +34,7 @@ impl Topic {
                         info!("changing current from {} into: {}", current, message);
                         current = message;
                         let response = PublishResponse { offset };
-                        responder.send(response);
+                        let _ = responder.send(response);
                         offset += 1;
                     }
                 }
