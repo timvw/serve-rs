@@ -4,7 +4,6 @@ use std::pin::Pin;
 use log::info;
 use chrono::Utc;
 
-use crate::broker::{PublishRequest, PublishResponse, SubscribeRequest};
 use crate::broker::broker_server::Broker;
 use crate::topic::Topic;
 
@@ -24,19 +23,20 @@ impl BrokerImpl {
 #[tonic::async_trait]
 impl Broker for BrokerImpl {
 
-    async fn publish(&self, request: Request<PublishRequest>) -> Result<Response<PublishResponse>, Status> {
+    async fn publish(&self, request: Request<crate::broker::PublishRequest>) -> Result<Response<crate::broker::PublishResponse>, Status> {
         info!("Got a request: {:?}", request);
 
-        let res = self.topic.publish(request.into_inner().message).await;
+        let topic_publish_request = crate::topic::PublishRequest { message: request.into_inner().message };
+        let res = self.topic.publish(topic_publish_request).await;
 
-        Ok(Response::new(PublishResponse {
+        Ok(Response::new(crate::broker::PublishResponse {
             message: format!("offset: {:?}", res.offset),
         }))
     }
 
     type SubscribeStream = Pin<Box<dyn Stream<Item = Result<crate::broker::Message, Status>> + Send + Sync + 'static>>;
 
-    async fn subscribe(&self, _request: Request<SubscribeRequest>) -> Result<Response<Self::SubscribeStream>, Status> {
+    async fn subscribe(&self, _request: Request<crate::broker::SubscribeRequest>) -> Result<Response<Self::SubscribeStream>, Status> {
 
         let output = async_stream::try_stream! {
             loop {
