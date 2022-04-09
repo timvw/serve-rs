@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: broker
+  labels:
+    app: broker
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broker
+  namespace: broker
+  labels:
+    app: broker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: broker
+  template:
+    metadata:
+      labels:
+        app: broker
+    spec:
+      containers:
+        - name: broker
+          image: docker.io/timvw/broker:latest
+          ports:
+            - containerPort: 50051
+          imagePullPolicy: "Always"
+      imagePullSecrets:
+        - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker
+  namespace: broker
+  labels:
+    app: broker
+spec:
+  selector:
+    app: broker
+  ports:
+    - port: 50051
+      targetPort: 50051
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: broker
+  namespace: broker
+  labels:
+    app: broker
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+spec:
+  tls:
+    - hosts:
+        - broker.apps.timvw.be
+      secretName: broker-apps-tls-secret
+  rules:
+    - host: broker.apps.timvw.be
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: broker
+                port:
+                  number: 50051
