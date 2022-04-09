@@ -1,7 +1,7 @@
 use tonic::{Request, Response, Status};
 use futures_core::Stream;
 use std::pin::Pin;
-use log::info;
+use log::trace;
 use chrono::Utc;
 
 use crate::broker::broker_server::Broker;
@@ -24,7 +24,7 @@ impl BrokerImpl {
 impl Broker for BrokerImpl {
 
     async fn publish(&self, request: Request<crate::broker::PublishRequest>) -> Result<Response<crate::broker::PublishResponse>, Status> {
-        info!("Got a request: {:?}", request);
+        trace!("Got a request: {:?}", request);
 
         let topic_publish_request = crate::topic::PublishRequest { message: request.into_inner().message };
         let res = self.topic.publish(topic_publish_request).await;
@@ -44,7 +44,7 @@ impl Broker for BrokerImpl {
                     message: format!("The time is {:?}", Utc::now()),
                 };
 
-                info!("yielding: {:?}", book_message);
+                trace!("yielding: {:?}", book_message);
                 yield book_message
             }
         };

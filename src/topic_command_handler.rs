@@ -1,4 +1,4 @@
-use log::info;
+use log::trace;
 use tokio::sync::oneshot;
 use crate::topic::{PublishRequest, PublishResponse};
 
@@ -28,7 +28,7 @@ impl TopicCommandHandler {
     }
 
     pub fn handle_publish_request(&mut self, publish_request: PublishRequest, response_sender: oneshot::Sender<PublishResponse>) {
-        info!("changing current from {} into: {}", self.message, publish_request.message);
+        trace!("changing current from {} into: {}", self.message, publish_request.message);
         let response = PublishResponse { offset: self.offset };
         self.message = publish_request.message;
         self.offset += 1;
