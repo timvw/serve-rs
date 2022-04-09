@@ -1,6 +1,6 @@
 use tokio::sync::mpsc::Sender;
 use tokio::sync::{mpsc, oneshot};
-use crate::topiccommandhandler::{PublishRequest, PublishResponse, TopicCommand, TopicCommandHandler};
+use crate::topic_command_handler::{PublishRequest, PublishResponse, TopicCommand, TopicCommandHandler};
 
 #[derive(Debug)]
 pub struct Topic {
@@ -9,11 +9,13 @@ pub struct Topic {
 
 impl Topic {
     pub fn new() -> Topic {
-        let (command_sender, command_receiver) = mpsc::channel::<TopicCommand>(32);
+        let (command_sender, mut command_receiver) = mpsc::channel::<TopicCommand>(32);
 
         let _ = tokio::spawn(async move {
-            let mut topic_manager = TopicCommandHandler::new();
-            topic_manager.run(command_receiver).await;
+            let mut topic_command_handler = TopicCommandHandler::new();
+            while let Some(cmd) = command_receiver.recv().await {
+                topic_command_handler.handle(cmd);
+            }
         });
 
         Topic {

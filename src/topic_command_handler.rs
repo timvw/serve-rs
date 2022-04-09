@@ -31,11 +31,9 @@ impl TopicCommandHandler {
         }
     }
 
-    pub async fn run(&mut self, mut command_receiver: mpsc::Receiver<TopicCommand>) {
-        while let Some(cmd) = command_receiver.recv().await {
-            match cmd {
-                TopicCommand::Publish(publish_request) => self.handle_publish_request(publish_request)
-            }
+    pub fn handle(&mut self, cmd: TopicCommand) {
+        match cmd {
+            TopicCommand::Publish(publish_request) => self.handle_publish_request(publish_request)
         }
     }
 
