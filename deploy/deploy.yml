@@ -54,8 +54,12 @@ metadata:
     app: broker
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    #kubernetes.io/ingress.class: "nginx"
+    #nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    #nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    #nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    #nginx.ingress.kubernetes.io/ssl-passthrough: "false"
+    #nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   tls:
     - hosts:

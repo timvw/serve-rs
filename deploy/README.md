@@ -16,7 +16,17 @@ Publish container
 ```bash
 docker tag broker:latest registry.apps.timvw.be/broker:latest
 docker push registry.apps.timvw.be/broker:latest
+
+docker tag broker:latest docker.io/timvw/broker:latest
+docker push docker.io/timvw/broker:latest
 ```
+
+(Re-)deploy
+
+```bash
+kubectl rollout restart -n broker deployment/broker
+```
+
 
 Forward port:
 
@@ -36,6 +46,11 @@ Call publish method
 
 ```bash
 grpcurl -plaintext -import-path ./proto -proto broker.proto -d '{"message": "hi"}' '[::1]:50051'  broker.Broker/Publish
+
+
+grpcurl -vv -plaintext -import-path ./proto -proto broker.proto -d '{"message": "hi"}' 'broker.apps.timvw.be:443'  broker.Broker/Publish
+
+
 ```
 
 Run performance test:
@@ -84,3 +99,18 @@ Latency distribution:
 Status code distribution:
 [OK]   1000000 responses 
 ```
+
+Get k8s dashboard token
+
+```bash
+kubectl get secret -n kube-system $(kubectl get secret -n kube-system | grep kubernetes-dashboard-token | awk '{print $1}') -o json | jq -r .data.token | base64  -d | pbcopy
+```
+
+Allowing access to GRPC/TCP port in microk8s
+
+```bash
+kubectl patch cm nginx-ingress-tcp-microk8s-conf -n ingress --patch '{"data":{"50001":"broker/broker:50001"}}'
+kubectl patch ds nginx-ingress-microk8s-controller --patch "$(cat ./deploy/ingress.yml)" -n ingress
+```
+
+

@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     loop {
 
-        let mut broker_client = BrokerClient::connect("http://[::1]:50051").await?;
+        let mut broker_client = BrokerClient::connect("http://broker.apps.timvw.be:50051").await?;
 
         let request = tonic::Request::new(PublishRequest {
             message: format!("[{:?}] -> The time is {:?}", name, Utc::now()),
