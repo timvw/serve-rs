@@ -48,7 +48,7 @@ Call publish method
 grpcurl -plaintext -import-path ./proto -proto broker.proto -d '{"message": "hi"}' '[::1]:50051'  broker.Broker/Publish
 
 
-grpcurl -vv -plaintext -import-path ./proto -proto broker.proto -d '{"message": "hi"}' 'broker.apps.timvw.be:443'  broker.Broker/Publish
+grpcurl -vv -plaintext -import-path ./proto -proto broker.proto -d '{"message": "hi"}' 'broker.apps.timvw.be:50051'  broker.Broker/Publish
 
 
 ```
